@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ফিজিক্স ১ম অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "বিনা প্রমাণে কোন কিছু মেনে নেওয়াকে বলে-",
+          options: {
+            a: "ধারণা",
+            b: "স্বীকার্য",
+            c: "নীতি",
+            d: "তত্ত্ব",
+          },
+          correct: "B",
+          explanation:
+            "<p>বিনা প্রমাণে কোনো কিছু মেনে নেওয়াকে <b>স্বীকার্য</b> (Axiom/Postulate) বলা হয়। এটি এমন একটি মৌলিক প্রতিজ্ঞা যা সত্য বলে ধরে নেওয়া হয়, সাধারণত কোনো যুক্তি বা প্রমাণের প্রয়োজন ছাড়াই। এটি একটি বৃহত্তর যুক্তি বা তাত্ত্বিক কাঠামোর ভিত্তি হিসেবে কাজ করে।</p><p>বিভিন্ন অপশনগুলোর ব্যাখ্যা নিচে দেওয়া হলো:</p><br><ul><li><b>(A) ধারণা (Concept):</b> কোনো কিছু সম্পর্কে একটি সাধারণ উপলব্ধি বা বিমূর্ত চিন্তা। এর জন্য প্রমাণের প্রয়োজন হতেও পারে বা নাও হতে পারে।</li><br><li><b>(B) স্বীকার্য (Axiom/Postulate):</b> এটি এমন একটি মৌলিক সত্য যা প্রমাণ ছাড়াই মেনে নেওয়া হয় এবং যা থেকে অন্যান্য সিদ্ধান্ত বা উপপাদ্য নিঃসৃত হয়। যেমন, ইউক্লিডীয় জ্যামিতিতে কিছু স্বীকার্য রয়েছে যা বিনা প্রমাণে মেনে নেওয়া হয়।</li><br><li><b>(C) নীতি (Principle):</b> কোনো কিছু কীভাবে কাজ করে বা হওয়া উচিত তার একটি সাধারণ নিয়ম বা মৌলিক সত্য। নীতির পেছনে প্রায়শই প্রমাণ বা অভিজ্ঞতা থাকে।</li><br><li><b>(D) তত্ত্ব (Theory):</b> এটি সুসংগঠিত ধারণার একটি সেট যা পর্যবেক্ষণ এবং পরীক্ষার মাধ্যমে সমর্থিত এবং কোনো ঘটনা বা ঘটনার সেটকে ব্যাখ্যা করে। তত্ত্ব প্রমাণ বা গবেষণার উপর ভিত্তি করে গড়ে ওঠে।</li></ul>",
+        },
+        {
+          id: 2,
+          question: "পদার্থবিজ্ঞানের ভিত্তির সাধারণ সূত্রগুলোকে কী বলা হয়?",
+          options: {
+            a: "নীতি",
+            b: "ধারণা",
+            c: "অনুমিতি",
+            d: "স্বীকার্য",
+          },
+          correct: "A",
+          explanation:
+            "<p>পদার্থবিজ্ঞানের ভিত্তির সাধারণ সূত্রগুলোকে <b>নীতি</b> (Principle) বলা হয়। নীতি হলো পদার্থবিজ্ঞানের মৌলিক নিয়মাবলী যা প্রাকৃতিক ঘটনাগুলিকে ব্যাখ্যা করে এবং যার উপর ভিত্তি করে অন্যান্য সূত্র ও তত্ত্ব গড়ে ওঠে। এগুলি সাধারণত ব্যাপক পরীক্ষা-নিরীক্ষা ও পর্যবেক্ষণের মাধ্যমে প্রতিষ্ঠিত হয় এবং সর্বজনীনভাবে স্বীকৃত।</p><p>বিভিন্ন অপশনগুলোর ব্যাখ্যা নিচে দেওয়া হলো:</p><br><ul><li><b>(A) নীতি (Principle):</b> পদার্থবিজ্ঞানে নীতি হলো মৌলিক এবং ব্যাপক নিয়ম যা প্রাকৃতিক প্রক্রিয়াগুলিকে বর্ণনা করে। যেমন, শক্তির সংরক্ষণ নীতি, ভরবেগের সংরক্ষণ নীতি ইত্যাদি। এগুলি পদার্থবিজ্ঞানের মূল ভিত্তি।</li><br><li><b>(B) ধারণা (Concept):</b> এটি কোনো নির্দিষ্ট বিষয় সম্পর্কে একটি বিমূর্ত উপলব্ধি। ধারণাগুলি নীতি বা সূত্র গঠনের ভিত্তি হতে পারে, কিন্তু তারা নিজেরাই সাধারণ সূত্র নয়।</li><br><li><b>(C) অনুমিতি (Assumption):</b> এটি এমন একটি বিষয় যা সাময়িকভাবে সত্য বলে ধরে নেওয়া হয়, কিন্তু এর পেছনে দৃঢ় প্রমাণ নাও থাকতে পারে। এটি সাধারণত কোনো মডেল বা পরীক্ষার জন্য একটি প্রারম্ভিক বিন্দু হিসেবে কাজ করে।</li><br><li><b>(D) স্বীকার্য (Axiom/Postulate):</b> এটি এমন একটি মৌলিক প্রতিজ্ঞা যা বিনা প্রমাণে সত্য বলে মেনে নেওয়া হয়। এটি সাধারণত গাণিতিক বা যৌক্তিক কাঠামোর ভিত্তি। যদিও কিছু স্বীকার্য পদার্থবিজ্ঞানের ধারণায় ব্যবহৃত হয়, তবে সাধারণ সূত্রগুলোকে নীতি বলা হয়।</li></ul>",
+        },
+        {
+          id: 3,
+          question:
+            "সাধারণভাবে কোনো নির্দিষ্ট শর্তে সব সময় কী ঘটবে তার বর্ণনাকে কী বলে?",
+          options: {
+            a: "নীতি",
+            b: "সূত্র",
+            c: "ধারণা",
+            d: "অনুকল্প",
+          },
+          correct: "B",
+          explanation:
+            "<p>সাধারণভাবে কোনো নির্দিষ্ট শর্তে সব সময় কী ঘটবে তার বর্ণনাকে <b>সূত্র</b> (Law) বলা হয়। সূত্র হলো বৈজ্ঞানিক পর্যবেক্ষণ বা পরীক্ষার মাধ্যমে প্রমাণিত একটি সংক্ষিপ্ত বিবৃতি যা প্রাকৃতিক ঘটনাগুলোর মধ্যে একটি নিয়মিত সম্পর্ককে প্রকাশ করে। এটি গাণিতিকভাবেও প্রকাশ করা যেতে পারে এবং এর ভবিষ্যদ্বাণী করার ক্ষমতা থাকে।</p><p>বিভিন্ন অপশনগুলোর ব্যাখ্যা নিচে দেওয়া হলো:</p><br><ul><li><b>(A) নীতি (Principle):</b> নীতি হলো পদার্থবিজ্ঞানের মৌলিক নিয়ম যা প্রাকৃতিক প্রক্রিয়াগুলিকে বর্ণনা করে, কিন্তু এটি নির্দিষ্ট শর্তে 'কী ঘটবে' তার সরাসরি বর্ণনা নাও হতে পারে।</li><br><li><b>(B) সূত্র (Law):</b> একটি বৈজ্ঞানিক সূত্র হলো একটি সুপ্রতিষ্ঠিত নিয়ম যা নির্দিষ্ট শর্তে একটি প্রাকৃতিক ঘটনার ধারাবাহিকতা বর্ণনা করে। যেমন, নিউটনের গতিসূত্র, ওহমের সূত্র ইত্যাদি। এগুলো পুনরাবৃত্তিযোগ্য পর্যবেক্ষণ এবং পরীক্ষার মাধ্যমে প্রমাণিত।</li><br><li><b>(C) ধারণা (Concept):</b> এটি কোনো বিষয় সম্পর্কে একটি মৌলিক উপলব্ধি। ধারণাগুলি সূত্র গঠনের ভিত্তি হতে পারে, কিন্তু তারা নিজেরাই ঘটনার বর্ণনা নয়।</li><br><li><b>(D) অনুকল্প (Hypothesis):</b> এটি একটি প্রস্তাবিত ব্যাখ্যা যা পর্যবেক্ষণ থেকে তৈরি করা হয় এবং পরীক্ষা-নিরীক্ষার মাধ্যমে প্রমাণ করা যায়। এটি একটি সূত্র হওয়ার পূর্ববর্তী ধাপ।</li></ul>",
+        },
+        {
+          id: 4,
+          question: "স্বতঃসিদ্ধ বা স্বীকার্য কী?",
+          options: {
+            a: "গাণিতিক যুক্তি",
+            b: "কোনো ধারণা বা তত্ত্ব",
+            c: "বৈজ্ঞানিক পরীক্ষায় প্রমাণিত",
+            d: "পরীক্ষণের সার-সংক্ষেপ",
+          },
+          correct: "B",
+          explanation:
+            "<p><b>স্বতঃসিদ্ধ বা স্বীকার্য</b> (Axiom/Postulate) হলো এমন একটি মৌলিক প্রতিজ্ঞা যা প্রমাণ ছাড়াই সত্য বলে মেনে নেওয়া হয় এবং যা থেকে একটি বৃহত্তর যুক্তি বা তাত্ত্বিক কাঠামো গড়ে ওঠে। এটি কোনো <b>ধারণা বা তত্ত্বের</b> ভিত্তি হিসেবে কাজ করে।</p><p>বিভিন্ন অপশনগুলোর ব্যাখ্যা নিচে দেওয়া হলো:</p><br><ul><li><b>(A) গাণিতিক যুক্তি:</b> স্বীকার্য গাণিতিক যুক্তির ভিত্তি হলেও, এটি নিজেই কোনো গাণিতিক যুক্তি নয়, বরং একটি ভিত্তিগত বিবৃতি।</li><br><li><b>(B) কোনো ধারণা বা তত্ত্ব:</b> স্বীকার্য মূলত একটি মৌলিক ধারণা বা প্রস্তাবনা যা একটি তত্ত্ব বা জ্ঞানের শাখার ভিত্তি স্থাপন করে। যেমন, ইউক্লিডীয় জ্যামিতির স্বতঃসিদ্ধগুলো হলো তার সম্পূর্ণ জ্যামিতিক তত্ত্বের ভিত্তি।</li><br><li><b>(C) বৈজ্ঞানিক পরীক্ষায় প্রমাণিত:</b> স্বীকার্য প্রমাণ ছাড়াই মেনে নেওয়া হয়, এটি বৈজ্ঞানিক পরীক্ষায় প্রমাণিত হওয়ার প্রয়োজন নেই। যা পরীক্ষায় প্রমাণিত হয়, তা সাধারণত সূত্র বা তত্ত্ব।</li><br><li><b>(D) পরীক্ষণের সার-সংক্ষেপ:</b> এটিও সঠিক নয়। পরীক্ষণের সার-সংক্ষেপ সাধারণত সূত্র বা তত্ত্বের অংশ হয়।</li></ul>",
+        },
+        {
+          id: 5,
+          question: "তত্ত্ব কী বিষয়ের উপর ভিত্তি করে গড়ে উঠে?",
+          options: {
+            a: "নীতি",
+            b: "অনুকল্প",
+            c: "অনুমিতি",
+            d: "পদ্ধতি",
+          },
+          correct: "B",
+          explanation:
+            "<p>তত্ত্ব (Theory) মূলত <b>অনুকল্প</b> (Hypothesis) এর উপর ভিত্তি করে গড়ে ওঠে। একটি অনুকল্প হলো একটি প্রস্তাবিত ব্যাখ্যা যা পরীক্ষা-নিরীক্ষার মাধ্যমে যাচাই করা যেতে পারে। যখন একটি অনুকল্প বারবার পর্যবেক্ষণ ও পরীক্ষার মাধ্যমে সমর্থিত হয় এবং নির্ভরযোগ্য বলে প্রমাণিত হয়, তখন এটি একটি তত্ত্বে বিকশিত হতে পারে।</p><p>বিভিন্ন অপশনগুলোর ব্যাখ্যা নিচে দেওয়া হলো:</p><br><ul><li><b>(A) নীতি (Principle):</b> নীতি হলো মৌলিক নিয়ম যা প্রাকৃতিক প্রক্রিয়াগুলিকে বর্ণনা করে। নীতিগুলি তত্ত্বের অংশ হতে পারে, কিন্তু তত্ত্বের ভিত্তি অনুকল্প।</li><br><li><b>(B) অনুকল্প (Hypothesis):</b> এটি একটি প্রাথমিক অনুমান বা প্রস্তাবিত ব্যাখ্যা যা পরীক্ষা-নিরীক্ষার মাধ্যমে যাচাই করা হয়। যখন একাধিক অনুকল্প সফলভাবে পরীক্ষা করা হয় এবং একটি সামঞ্জস্যপূর্ণ ব্যাখ্যা প্রদান করে, তখন সেগুলো একত্রিত হয়ে একটি তত্ত্ব গঠন করতে পারে।</li><br><li><b>(C) অনুমিতি (Assumption):</b> এটি এমন একটি বিষয় যা সাময়িকভাবে সত্য বলে ধরে নেওয়া হয়, তবে এর পেছনে দৃঢ় প্রমাণ নাও থাকতে পারে। অনুমিতি তত্ত্বের কিছু অংশে ব্যবহৃত হলেও, তত্ত্বের প্রধান ভিত্তি অনুকল্প।</li><br><li><b>(D) পদ্ধতি (Method):</b> পদ্ধতি হলো কোনো বৈজ্ঞানিক গবেষণা বা পরীক্ষার ধাপসমূহ। এটি তত্ত্ব গঠনের প্রক্রিয়া, কিন্তু তত্ত্বের ভিত্তি নয়।</li></ul>",
+        },
+        {
+          id: 6,
+          question:
+            "একটি আদর্শ বা যুক্তিপূর্ণ আচরণ ভিত্তি যার সাপেক্ষে অন্যান্য বিষয় তুলনা, বিচার বিশ্লেষণ ও পরিমাপ করা হয় তাকে কী বলে?",
+          options: {
+            a: "সূত্র",
+            b: "নীতি",
+            c: "অনুকল্প",
+            d: "স্বীকার্য",
+          },
+          correct: "B",
+          explanation:
+            "<p>একটি আদর্শ বা যুক্তিপূর্ণ আচরণ ভিত্তি যার সাপেক্ষে অন্যান্য বিষয় তুলনা, বিচার বিশ্লেষণ ও পরিমাপ করা হয় তাকে <b>নীতি</b> (Principle) বলা হয়। নীতি হলো একটি মৌলিক নিয়ম বা আদর্শ যা নির্দেশিকা হিসেবে কাজ করে এবং কোনো বিষয়কে বুঝতে, ব্যাখ্যা করতে বা মূল্যায়ন করতে সহায়তা করে।</p><p>বিভিন্ন অপশনগুলোর ব্যাখ্যা নিচে দেওয়া হলো:</p><br><ul><li><b>(A) সূত্র (Law):</b> সূত্র হলো প্রাকৃতিক ঘটনার মধ্যে একটি প্রতিষ্ঠিত সম্পর্ক, যা নির্দিষ্ট শর্তে কী ঘটবে তা বর্ণনা করে। এটি তুলনা বা বিশ্লেষণের ভিত্তি হতে পারে, তবে নীতির মতো আদর্শ আচরণ ভিত্তি নয়।</li><br><li><b>(B) নীতি (Principle):</b> এটি একটি মৌলিক সত্য বা আদর্শ যা নির্দেশিকা হিসেবে কাজ করে। যেমন, নৈতিক নীতি (Ethical Principle) বা কার্যনির্বাহী নীতি (Operating Principle)। পদার্থবিজ্ঞানেও বিভিন্ন নীতি রয়েছে যা ঘটনার ব্যাখ্যা ও বিশ্লেষণের ভিত্তি।</li><br><li><b>(C) অনুকল্প (Hypothesis):</b> এটি একটি প্রস্তাবিত ব্যাখ্যা যা পরীক্ষা-নিরীক্ষার মাধ্যমে যাচাই করা যায়। এটি একটি ভিত্তি হলেও, আদর্শ আচরণ ভিত্তি নয়।</li><br><li><b>(D) স্বীকার্য (Axiom/Postulate):</b> এটি প্রমাণ ছাড়াই মেনে নেওয়া একটি মৌলিক প্রতিজ্ঞা, যা সাধারণত একটি তাত্ত্বিক কাঠামোর ভিত্তি। এটি একটি আদর্শ আচরণ ভিত্তি নয়, বরং একটি অকাট্য সত্য।</li></ul>",
+        },
+        {
+          id: 7,
+          question: "পরীক্ষা দ্বারা প্রমাণিত অনুকল্পকে বলে-",
+          options: {
+            a: "ধারণা",
+            b: "তত্ত্ব",
+            c: "নীতি",
+            d: "সূত্র",
+          },
+          correct: "B",
+          explanation:
+            "<p>যখন একটি অনুকল্প (Hypothesis) পরীক্ষা-নিরীক্ষার মাধ্যমে বারবার প্রমাণিত হয় এবং একটি বৃহত্তর পরিসরের ঘটনাকে ব্যাখ্যা করার ক্ষমতা লাভ করে, তখন তাকে <b>তত্ত্ব</b> (Theory) বলে। তত্ত্ব হলো একটি সুসংগঠিত এবং ব্যাপকভাবে পরীক্ষিত ব্যাখ্যা যা প্রাকৃতিক বিশ্বের কোনো দিককে বর্ণনা করে।</p><p>বিভিন্ন অপশনগুলোর ব্যাখ্যা নিচে দেওয়া হলো:</p><br><ul><li><b>(A) ধারণা (Concept):</b> এটি কোনো কিছু সম্পর্কে একটি সাধারণ উপলব্ধি বা বিমূর্ত চিন্তা। এটি একটি অনুকল্পের থেকে কম সুনির্দিষ্ট এবং প্রমাণের উপর নির্ভরশীল নয়।</li><br><li><b>(B) তত্ত্ব (Theory):</b> এটি বৈজ্ঞানিক পদ্ধতি দ্বারা যাচাইকৃত এবং প্রমাণিত অনুকল্প বা অনুকল্পের সেট। এটি পর্যবেক্ষণ, পরীক্ষা এবং যুক্তির উপর ভিত্তি করে গড়ে ওঠে এবং প্রাকৃতিক ঘটনাগুলিকে ব্যাখ্যা করার জন্য ব্যবহৃত হয়। যেমন, বিবর্তন তত্ত্ব, আপেক্ষিকতা তত্ত্ব।</li><br><li><b>(C) নীতি (Principle):</b> এটি একটি মৌলিক সত্য বা নিয়ম যা কোনো নির্দিষ্ট ঘটনার পিছনে থাকে। নীতিগুলি প্রায়শই তত্ত্বের অংশ হলেও, সরাসরি পরীক্ষিত অনুকল্পের চূড়ান্ত রূপ নয়।</li><br><li><b>(D) সূত্র (Law):</b> সূত্র হলো প্রাকৃতিক ঘটনার মধ্যে একটি প্রতিষ্ঠিত সম্পর্ক যা নির্দিষ্ট শর্তে কী ঘটবে তা বর্ণনা করে। সূত্র একটি নির্দিষ্ট ঘটনার 'কী' ঘটে তা বলে, কিন্তু 'কেন' ঘটে তা ব্যাখ্যা করে না, যা তত্ত্ব ব্যাখ্যা করে।</li></ul>",
+        },
+        {
+          id: 8,
+          question: "কোনো কিছু সম্পর্কে সঠিক উপলব্ধি বা বোধগম্যতাকে কী বলে?",
+          options: {
+            a: "ধারণা",
+            b: "সূত্র",
+            c: "নীতি",
+            d: "তত্ত্ব",
+          },
+          correct: "A",
+          explanation:
+            "<p>কোনো কিছু সম্পর্কে সঠিক উপলব্ধি বা বোধগম্যতাকে <b>ধারণা</b> (Concept) বলা হয়। ধারণা হলো কোনো বস্তু, ঘটনা বা বৈশিষ্ট্যের মানসিক চিত্র বা বিমূর্ত প্রতিনিধিত্ব। এটি কোনো বিষয় সম্পর্কে আমাদের প্রাথমিক বা উন্নত জ্ঞানকে নির্দেশ করে।</p><p>বিভিন্ন অপশনগুলোর ব্যাখ্যা নিচে দেওয়া হলো:</p><br><ul><li><b>(A) ধারণা (Concept):</b> এটি হলো কোনো নির্দিষ্ট বিষয় সম্পর্কে আমাদের উপলব্ধি, চিন্তা বা জ্ঞান। যেমন, 'সময়' সম্পর্কে ধারণা, 'পদার্থ' সম্পর্কে ধারণা।</li><br><li><b>(B) সূত্র (Law):</b> সূত্র হলো বৈজ্ঞানিক পর্যবেক্ষণ বা পরীক্ষার মাধ্যমে প্রমাণিত একটি সংক্ষিপ্ত বিবৃতি যা প্রাকৃতিক ঘটনাগুলোর মধ্যে একটি নিয়মিত সম্পর্ককে প্রকাশ করে। এটি উপলব্ধি বা বোধগম্যতা নয়, বরং একটি প্রতিষ্ঠিত নিয়ম।</li><br><li><b>(C) নীতি (Principle):</b> এটি একটি মৌলিক নিয়ম বা আদর্শ যা নির্দেশিকা হিসেবে কাজ করে। এটি উপলব্ধির চেয়ে কার্যকারিতার সাথে বেশি সম্পর্কিত।</li><br><li><b>(D) তত্ত্ব (Theory):</b> এটি সুসংগঠিত ধারণার একটি সেট যা পর্যবেক্ষণ এবং পরীক্ষার মাধ্যমে সমর্থিত এবং কোনো ঘটনা বা ঘটনার সেটকে ব্যাখ্যা করে। এটি উপলব্ধির চেয়ে ব্যাপকতর এবং প্রমাণের উপর নির্ভরশীল।</li></ul>",
+        },
+        {
+          id: 9,
+          question:
+            "কোনো কিছু ব্যাখ্যার জন্য যে আনুষ্ঠানিক চিন্তা ধারা তাকে বলে?",
+          options: {
+            a: "স্বীকার্য",
+            b: "তত্ত্ব",
+            c: "অনুকল্প",
+            d: "সূত্র",
+          },
+          correct: "B",
+          explanation:
+            "<p>কোনো কিছু ব্যাখ্যার জন্য যে আনুষ্ঠানিক চিন্তা ধারা তাকে <b>তত্ত্ব</b> (Theory) বলে। তত্ত্ব হলো একটি সুসংগঠিত ধারণার সেট যা পর্যবেক্ষণ, পরীক্ষা এবং যুক্তির মাধ্যমে সমর্থিত এবং প্রাকৃতিক বিশ্বের কোনো ঘটনা বা ঘটনার সেটকে ব্যাখ্যা করে। এটি একটি আনুষ্ঠানিক কাঠামো প্রদান করে যা কেন এবং কীভাবে ঘটনা ঘটে তা বোঝাতে সাহায্য করে।</p><p>বিভিন্ন অপশনগুলোর ব্যাখ্যা নিচে দেওয়া হলো:</p><br><ul><li><b>(A) স্বীকার্য (Axiom/Postulate):</b> এটি প্রমাণ ছাড়াই মেনে নেওয়া একটি মৌলিক প্রতিজ্ঞা যা একটি তাত্ত্বিক কাঠামোর ভিত্তি। এটি ব্যাখ্যা করার প্রক্রিয়া নয়, বরং ভিত্তি।</li><br><li><b>(B) তত্ত্ব (Theory):</b> এটি বৈজ্ঞানিক পদ্ধতি দ্বারা যাচাইকৃত এবং প্রমাণিত অনুকল্প বা অনুকল্পের সেট। এটি প্রাকৃতিক ঘটনাগুলিকে ব্যাখ্যা করার জন্য ব্যবহৃত একটি সুসংগঠিত এবং আনুষ্ঠানিক চিন্তা ধারা।</li><br><li><b>(C) অনুকল্প (Hypothesis):</b> এটি একটি প্রাথমিক অনুমান বা প্রস্তাবিত ব্যাখ্যা যা পরীক্ষা-নিরীক্ষার মাধ্যমে যাচাই করা হয়। এটি তত্ত্বের পূর্ববর্তী ধাপ।</li><br><li><b>(D) সূত্র (Law):</b> সূত্র হলো প্রাকৃতিক ঘটনার মধ্যে একটি প্রতিষ্ঠিত সম্পর্ক যা নির্দিষ্ট শর্তে কী ঘটবে তা বর্ণনা করে। সূত্র একটি নির্দিষ্ট ঘটনার 'কী' ঘটে তা বলে, কিন্তু 'কেন' ঘটে তা ব্যাখ্যা করে না, যা তত্ত্ব ব্যাখ্যা করে।</li></ul>",
+        },
+        {
+          id: 10,
+          question: "স্বীকার্য কী?",
+          options: {
+            a: "গাণিতিক যুক্তি",
+            b: "তত্ত্বর ভিত্তি প্রদানকারী",
+            c: "বৈজ্ঞানিক পরীক্ষায় প্রমাণিত",
+            d: "পরীক্ষণের সার-সংক্ষেপ",
+          },
+          correct: "B",
+          explanation:
+            "<p><b>স্বীকার্য</b> (Axiom/Postulate) হলো এমন একটি মৌলিক প্রতিজ্ঞা যা প্রমাণ ছাড়াই সত্য বলে মেনে নেওয়া হয় এবং যা থেকে একটি বৃহত্তর যুক্তি বা তাত্ত্বিক কাঠামো গড়ে ওঠে। এটি একটি <b>তত্ত্বের ভিত্তি প্রদানকারী</b> উপাদান। অর্থাৎ, স্বীকার্যগুলো একটি তত্ত্বের মৌলিক স্তম্ভ, যার উপর ভিত্তি করে অন্যান্য ধারণা, সূত্র বা যুক্তি প্রতিষ্ঠা করা হয়।</p><p>বিভিন্ন অপশনগুলোর ব্যাখ্যা নিচে দেওয়া হলো:</p><br><ul><li><b>(A) গাণিতিক যুক্তি:</b> স্বীকার্য গাণিতিক যুক্তির ভিত্তি হলেও, এটি নিজেই কোনো গাণিতিক যুক্তি নয়, বরং একটি ভিত্তিগত বিবৃতি।</li><br><li><b>(B) তত্ত্বর ভিত্তি প্রদানকারী:</b> এটিই সঠিক। স্বীকার্যগুলো হলো সেই মৌলিক সত্য যা একটি নির্দিষ্ট তত্ত্ব বা জ্ঞানের শাখার ভিত্তি হিসেবে কাজ করে, যার উপর ভিত্তি করে অন্যান্য বিষয় প্রতিষ্ঠা করা হয়।</li><br><li><b>(C) বৈজ্ঞানিক পরীক্ষায় প্রমাণিত:</b> স্বীকার্য প্রমাণ ছাড়াই মেনে নেওয়া হয়, এটি বৈজ্ঞানিক পরীক্ষায় প্রমাণিত হওয়ার প্রয়োজন নেই। যা পরীক্ষায় প্রমাণিত হয়, তা সাধারণত সূত্র বা তত্ত্ব।</li><br><li><b>(D) পরীক্ষণের সার-সংক্ষেপ:</b> এটিও সঠিক নয়। পরীক্ষণের সার-সংক্ষেপ সাধারণত সূত্র বা তত্ত্বের অংশ হয়।</li></ul>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                <label class="option" data-option="${option}">
+                                  <div class="circle">${option}</div>
+                                  <span class="option-text">${question.options[option]}</span>
+                                </label>
+                              `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                   <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                   <div class="explanation-content">
+                                     <div class="explanation-label">ব্যাখ্যা:</div>
+                                     ${question.explanation}
+                                   </div>
+                                 </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                              <p class="question-label">${index + 1}. ${
+            question.question
+          }</p>
+                              <div class="options">
+                                ${optionsHTML}
+                              </div>
+                              ${explanationHTML}
+                            `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
